@@ -5,6 +5,10 @@
       "resourceId": null,
       "type": "secrets.user",
       "connectionId": null
+    },
+    "appInsights1": {
+      "type": "appInsights.sdk",
+      "dynamicId": null
     }
   }
 }

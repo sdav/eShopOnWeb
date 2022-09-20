@@ -32,6 +32,8 @@ builder.Services.AddEndpoints();
 // Use to force loading of appsettings.json of test project
 builder.Configuration.AddConfigurationFile("appsettings.test.json");
 builder.Logging.AddConsole();
+builder.Logging.AddApplicationInsights();
+builder.Services.AddApplicationInsightsTelemetry();
 
 Microsoft.eShopWeb.Infrastructure.Dependencies.ConfigureServices(builder.Configuration, builder.Services);
 
@@ -82,6 +84,7 @@ builder.Services.AddCors(options =>
                           corsPolicyBuilder.AllowAnyHeader();
                       });
 });
+
 
 builder.Services.AddControllers();
 
@@ -182,6 +185,19 @@ app.UseEndpoints(endpoints =>
 
 app.MapEndpoints();
 app.Logger.LogInformation("LAUNCHING PublicApi");
+
+//try
+//{
+//    // test error
+//    throw new Exception("Cannot move further");
+//}
+//catch(Exception ex)
+//{
+//    app.Logger.LogError(ex, ex.Message);
+//    throw new Exception(ex.Message);
+//}
+
 app.Run();
+
 
 public partial class Program { }
