@@ -1,4 +1,9 @@
-﻿using System.Linq;
+﻿using System;
+using System.Diagnostics;
+using System.Linq;
+using System.Net.Http;
+using System.Net.Http.Json;
+using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 using Ardalis.GuardClauses;
 using Microsoft.eShopWeb.ApplicationCore.Entities;
@@ -6,6 +11,7 @@ using Microsoft.eShopWeb.ApplicationCore.Entities.BasketAggregate;
 using Microsoft.eShopWeb.ApplicationCore.Entities.OrderAggregate;
 using Microsoft.eShopWeb.ApplicationCore.Interfaces;
 using Microsoft.eShopWeb.ApplicationCore.Specifications;
+using Newtonsoft.Json;
 
 namespace Microsoft.eShopWeb.ApplicationCore.Services;
 
@@ -47,7 +53,27 @@ public class OrderService : IOrderService
         }).ToList();
 
         var order = new Order(basket.BuyerId, shippingAddress, items);
+        if (await _orderRepository.AddAsync(order) != null)
+        {
+            await PostOrderAsync(order);
+        }
+    }
 
-        await _orderRepository.AddAsync(order);
+    private async Task<Boolean> PostOrderAsync(Order order)
+    {
+        //var functionAppUrl = "http://localhost:7095/api/OrderItemsReserver";
+        var functionAppUrl = "https://orderitemsreserverapp20220930084629.azurewebsites.net/api/OrderItemsReserver?code=DMcmU9JUbOHWBRnuNug2tBu8NX32KXi58qJpNWYt0AsiAzFu5fbl5Q==";
+        var json = JsonConvert.SerializeObject(order);
+        HttpClient _client = new HttpClient();
+        HttpRequestMessage req = new HttpRequestMessage(HttpMethod.Post, functionAppUrl);
+        req.Content = new StringContent(json);
+        var response = await _client.SendAsync(req);
+
+        if (response.IsSuccessStatusCode)
+        {
+            return response.IsSuccessStatusCode;
+        }
+
+        throw new Exception("Failed to load data into Blob!");
     }
 }
