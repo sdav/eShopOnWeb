@@ -8,11 +8,38 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using Azure.Storage.Blobs;
-using System.IO.Pipes;
+using Microsoft.Azure.Cosmos;
 using Microsoft.eShopWeb.ApplicationCore.Entities.OrderAggregate;
+using System.Collections.Generic;
 
 namespace OrderItemsReserverApp
 {
+    class Order
+    {
+        public string Id { get; set; }
+        public string id
+        {
+            get
+            {
+                return this.Id;
+            }
+        }
+        public string BuyerId;
+        public DateTimeOffset OrderDate;
+        public Address ShipToAddress;
+        public List<OrderItem> OrderItems = new List<OrderItem>();
+        public decimal FinalPrice { get
+            {
+                decimal count = 0;
+                foreach (OrderItem oi in this.OrderItems)
+                {
+                    count += (oi.UnitPrice * oi.Units);
+                }
+                return count;
+            } 
+        }
+    }
+
     public static class Function1
     {
         static Function1()
@@ -42,20 +69,28 @@ namespace OrderItemsReserverApp
                 throw new Exception("No Data!");
             }
 
-            dynamic order = JsonConvert.DeserializeObject(requestBody);
+            Order order = JsonConvert.DeserializeObject<Order>(requestBody);
+
 
             //
-            // saves to blob storage
+            // saves to cosmos db
             //
 
-            var blobConnectionString = Environment.GetEnvironmentVariable("bs");
-            var fileContainerName = "mycontainer";
-            string blobName = Guid.NewGuid().ToString(); // generated a new guid for each order
+            // Create a new instance of the Cosmos Client
+            string EndpointUri = "https://cosmos-db-dav-account.documents.azure.com:443/";
+            string PrimaryKey = "Leoay3F36qeqOIEfE5kmQaSCIKd87LhOYisca6jt6R1r3B6BSy5CD89JqAOrDlWA18rYSVaCOuNDj6mk6Lwocg==";
+            string databaseId = "az204Database";
+            string containerId = "az204Container";
 
-            BlobServiceClient blobServiceClient = new BlobServiceClient(blobConnectionString);
-            BlobContainerClient containerClient = blobServiceClient.GetBlobContainerClient(fileContainerName);
-            BlobClient blobClient = containerClient.GetBlobClient(blobName);
-            await blobClient.UploadAsync(ToStream(requestBody));
+            CosmosClient cosmosClient = new CosmosClient(EndpointUri, PrimaryKey);
+
+            // Runs the CreateDatabaseAsync method
+            Database database = await cosmosClient.CreateDatabaseIfNotExistsAsync(databaseId);
+
+            // Run the CreateContainerAsync method
+            Microsoft.Azure.Cosmos.Container container = await database.CreateContainerIfNotExistsAsync(containerId, "/id");
+
+            await container.CreateItemAsync(order, new PartitionKey(order.id));
 
             string responseMessage = "This HTTP triggered function executed successfully!";
 

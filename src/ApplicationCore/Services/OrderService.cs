@@ -62,7 +62,7 @@ public class OrderService : IOrderService
     private async Task<Boolean> PostOrderAsync(Order order)
     {
         //var functionAppUrl = "http://localhost:7095/api/OrderItemsReserver";
-        var functionAppUrl = "https://orderitemsreserverapp20220930084629.azurewebsites.net/api/OrderItemsReserver?code=DMcmU9JUbOHWBRnuNug2tBu8NX32KXi58qJpNWYt0AsiAzFu5fbl5Q==";
+        var functionAppUrl = "https://05-order-to-cosmos-db.azurewebsites.net/api/OrderItemsReserver?code=o5aEbTUdlHpw7rIaJsBoF1dKasxXnCvBHimk2bxTxfiYAzFuClzh6g==";
         var json = JsonConvert.SerializeObject(order);
         HttpClient _client = new HttpClient();
         HttpRequestMessage req = new HttpRequestMessage(HttpMethod.Post, functionAppUrl);
@@ -74,6 +74,6 @@ public class OrderService : IOrderService
             return response.IsSuccessStatusCode;
         }
 
-        throw new Exception("Failed to load data into Blob!");
+        throw new Exception("Failed to load data into CosmosDB!");
     }
 }
