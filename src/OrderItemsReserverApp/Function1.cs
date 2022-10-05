@@ -78,7 +78,7 @@ namespace OrderItemsReserverApp
 
             // Create a new instance of the Cosmos Client
             string EndpointUri = "https://cosmos-db-dav-account.documents.azure.com:443/";
-            string PrimaryKey = "Leoay3F36qeqOIEfE5kmQaSCIKd87LhOYisca6jt6R1r3B6BSy5CD89JqAOrDlWA18rYSVaCOuNDj6mk6Lwocg==";
+            string PrimaryKey = "xxxxxxxxx";
             string databaseId = "az204Database";
             string containerId = "az204Container";
 
