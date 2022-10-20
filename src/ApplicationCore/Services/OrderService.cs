@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Net.Http;
@@ -6,12 +7,15 @@ using System.Net.Http.Json;
 using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 using Ardalis.GuardClauses;
+using Azure;
+using Azure.Messaging.EventGrid;
 using Microsoft.eShopWeb.ApplicationCore.Entities;
 using Microsoft.eShopWeb.ApplicationCore.Entities.BasketAggregate;
 using Microsoft.eShopWeb.ApplicationCore.Entities.OrderAggregate;
 using Microsoft.eShopWeb.ApplicationCore.Interfaces;
 using Microsoft.eShopWeb.ApplicationCore.Specifications;
 using Newtonsoft.Json;
+
 
 namespace Microsoft.eShopWeb.ApplicationCore.Services;
 
@@ -61,19 +65,44 @@ public class OrderService : IOrderService
 
     private async Task<Boolean> PostOrderAsync(Order order)
     {
-        //var functionAppUrl = "http://localhost:7095/api/OrderItemsReserver";
-        var functionAppUrl = "https://05-order-to-cosmos-db.azurewebsites.net/api/OrderItemsReserver?code=xxxxxxxxxxx";
-        var json = JsonConvert.SerializeObject(order);
-        HttpClient _client = new HttpClient();
-        HttpRequestMessage req = new HttpRequestMessage(HttpMethod.Post, functionAppUrl);
-        req.Content = new StringContent(json);
-        var response = await _client.SendAsync(req);
+        //var topicEndpoint = "https://upload.switzerlandnorth-1.eventgrid.azure.net/api/events";
+        //var topicAccessKey = "bCRGGw3u5lQVYEQnX2/0y20hb5Wt7btitKKxY6e+DaY=";
 
-        if (response.IsSuccessStatusCode)
+        var topicEndpoint = "http://localhost:7071/runtime/webhooks/EventGrid?functionName=Function1";
+        var topicAccessKey = "abc";
+
+        EventGridPublisherClient client = new EventGridPublisherClient(
+            new Uri(topicEndpoint),
+            new AzureKeyCredential(topicAccessKey));
+
+
+        var json = JsonConvert.SerializeObject(order);
+
+        // Add EventGridEvents to a list to publish to the topic
+        List<EventGridEvent> eventsList = new List<EventGridEvent>
         {
-            return response.IsSuccessStatusCode;
+            // EventGridEvent with custom model serialized to JSON
+            new EventGridEvent(
+                "ExampleEventSubject",
+                "Example.EventType",
+                "1.0",
+                json),
+
+        };
+
+        // Send the events
+        var response = await client.SendEventsAsync(eventsList);
+
+        //HttpClient _client = new HttpClient();
+        //HttpRequestMessage req = new HttpRequestMessage(HttpMethod.Post, functionAppUrl);
+        //req.Content = new StringContent(json);
+        //var response = await _client.SendAsync(req);
+
+        if (response.IsError)
+        {
+            throw new Exception("Failed to load data into Queue!");
         }
 
-        throw new Exception("Failed to load data into CosmosDB!");
+        return true;
     }
 }
