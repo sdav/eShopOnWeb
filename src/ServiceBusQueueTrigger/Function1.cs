@@ -1,20 +1,14 @@
-﻿// Default URL for triggering event grid function in the local environment.
-// http://localhost:7071/runtime/webhooks/EventGrid?functionName={functionname}
-using System;
-using Microsoft.Azure.WebJobs;
-using Microsoft.Azure.WebJobs.Extensions.EventGrid;
-using Microsoft.Extensions.Logging;
-using Azure.Messaging.EventGrid;
-using Newtonsoft.Json;
+﻿using System;
 using System.Collections.Generic;
-using Microsoft.eShopWeb.ApplicationCore.Entities.OrderAggregate;
-using Azure.Storage.Blobs;
 using System.IO;
-using Azure;
-using System.Runtime.Serialization.Formatters.Binary;
-using Microsoft.eShopWeb;
+using Azure.Storage.Blobs;
+using Microsoft.Azure.WebJobs;
+using Microsoft.Azure.WebJobs.Host;
+using Microsoft.Extensions.Logging;
+using Newtonsoft.Json;
+using Microsoft.eShopWeb.ApplicationCore.Entities.OrderAggregate;
 
-namespace EventGridTrigger
+namespace ServiceBusQueueTrigger
 {
     class Order
     {
@@ -38,7 +32,7 @@ namespace EventGridTrigger
         }
     }
 
-    public static class Function1
+    public static class ExtClass
     {
         public static Stream ToStream(this string str)
         {
@@ -48,31 +42,35 @@ namespace EventGridTrigger
             writer.Flush();
             stream.Position = 0;
             return stream;
+
         }
+    }
+    public class Function1
+    {
 
         [FunctionName("Function1")]
-        public static void Run([EventGridTrigger] EventGridEvent eventGridEvent, ILogger log)
+        public void Run([ServiceBusTrigger("default", Connection = "connection")] string myQueueItem, ILogger log)
         {
+            log.LogInformation($"C# ServiceBus queue trigger function processed message: {myQueueItem}");
 
-            var eventDataStr = eventGridEvent.Data.ToString();
-
-            log.LogInformation(eventDataStr);
-
-            Order order = JsonConvert.DeserializeObject<Order>(eventGridEvent.Data.ToString());
+            Order order = JsonConvert.DeserializeObject<Order>(myQueueItem);
 
             //
             // saves to blob storage
             //
 
-            var blobConnectionString = "DefaultEndpointsProtocol - xxxxxxx"; //Environment.GetEnvironmentVariable("bs");
+            var blobConnectionString = Environment.GetEnvironmentVariable("blob-connection");
             var fileContainerName = "container1";
             string blobName = Guid.NewGuid().ToString(); // generated a new guid for each order
 
             BlobServiceClient blobServiceClient = new BlobServiceClient(blobConnectionString);
             BlobContainerClient containerClient = blobServiceClient.GetBlobContainerClient(fileContainerName);
             BlobClient blobClient = containerClient.GetBlobClient(blobName);
-            blobClient.Upload(ToStream(eventDataStr));
+            blobClient.Upload(ExtClass.ToStream(myQueueItem));
 
+            throw new Exception("test exception");
         }
     }
+
 }
+

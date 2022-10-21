@@ -72,7 +72,7 @@ namespace OrderItemsReserverApp
             // saves to blob storage
             //
 
-            var blobConnectionString = "DefaultEndpointsProtocol=https;AccountName=davsa1;AccountKey=UKJfCW0NhUfJ1P4wGVWVQOrfkbxGpLiooW4Xteqz9AJE5UnrH3uC38YrOmydwvjGlAP9QAX0I1CS+ASt24SMFQ==;EndpointSuffix=core.windows.net"; //Environment.GetEnvironmentVariable("bs");
+            var blobConnectionString = "DefaultEndpointsProtocol - xxxxx"; //Environment.GetEnvironmentVariable("bs");
             var fileContainerName = "container1";
             string blobName = Guid.NewGuid().ToString(); // generated a new guid for each order
 

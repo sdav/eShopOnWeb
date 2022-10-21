@@ -42,7 +42,9 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "PublicApiIntegrationTests",
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "OrderItemsReserverApp", "src\OrderItemsReserverApp\OrderItemsReserverApp.csproj", "{31187F05-7FC0-4CDC-940E-0599BAC2E74A}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EventGridTrigger", "src\EventGridTrigger\EventGridTrigger.csproj", "{A15F840E-3F01-4742-A9F7-87965A7522EE}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "EventGridTrigger", "src\EventGridTrigger\EventGridTrigger.csproj", "{A15F840E-3F01-4742-A9F7-87965A7522EE}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ServiceBusQueueTrigger", "src\ServiceBusQueueTrigger\ServiceBusQueueTrigger.csproj", "{86AF6EAD-99A2-4DA3-BA61-A10E4EF9B12C}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -102,6 +104,10 @@ Global
 		{A15F840E-3F01-4742-A9F7-87965A7522EE}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{A15F840E-3F01-4742-A9F7-87965A7522EE}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{A15F840E-3F01-4742-A9F7-87965A7522EE}.Release|Any CPU.Build.0 = Release|Any CPU
+		{86AF6EAD-99A2-4DA3-BA61-A10E4EF9B12C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{86AF6EAD-99A2-4DA3-BA61-A10E4EF9B12C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{86AF6EAD-99A2-4DA3-BA61-A10E4EF9B12C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{86AF6EAD-99A2-4DA3-BA61-A10E4EF9B12C}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

@@ -2,7 +2,7 @@
   "profiles": {
     "EventGridTrigger": {
       "commandName": "Project",
-      "commandLineArgs": "--port 7170",
+      "commandLineArgs": "--port 7071",
       "launchBrowser": false
     }
   }
