@@ -86,8 +86,7 @@ public class OrderService : IOrderService
         if (await _orderRepository.AddAsync(order) != null)
         {
             // await PostOrderAsync2EventGrid(order);
-
-            await PostOrderAsync2ServiceBus(order);
+            // await PostOrderAsync2ServiceBus(order);
         }
     }
 
