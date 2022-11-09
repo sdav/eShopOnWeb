@@ -12,4 +12,14 @@ public class UriComposer : IUriComposer
     {
         return uriTemplate.Replace("http://catalogbaseurltobereplaced", _catalogSettings.CatalogBaseUrl);
     }
+
+    public string GetServiceBusConnectionString()
+    {
+        return _catalogSettings.ServiceBusConnectionString;
+    }
+
+    public string GetDeliveryOrderProcessorUrl()
+    {
+        return _catalogSettings.DeliveryOrderProcessorUrl;
+    }
 }
