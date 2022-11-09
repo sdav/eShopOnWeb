@@ -1,22 +1,17 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.Mvc;
+using Azure.Storage.Blobs;
 using Microsoft.Azure.WebJobs;
-using Microsoft.Azure.WebJobs.Extensions.Http;
-using Microsoft.AspNetCore.Http;
+using Microsoft.Azure.WebJobs.Host;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
-using Azure.Storage.Blobs;
-using Microsoft.Azure.Cosmos;
 using Microsoft.eShopWeb.ApplicationCore.Entities.OrderAggregate;
-using System.Collections.Generic;
 
-namespace OrderItemsReserverApp
+namespace ServiceBusQueueTrigger
 {
     class Order
     {
-
         [JsonProperty("id")] //this part crutial! must be lowercase
         public string Id { get; set; }
         public string BuyerId;
@@ -37,11 +32,8 @@ namespace OrderItemsReserverApp
         }
     }
 
-    public static class Function1
+    public static class ExtClass
     {
-        static Function1()
-        {
-        }
         public static Stream ToStream(this string str)
         {
             MemoryStream stream = new MemoryStream();
@@ -50,41 +42,35 @@ namespace OrderItemsReserverApp
             writer.Flush();
             stream.Position = 0;
             return stream;
+
         }
+    }
+    public class Function1
+    {
 
-        [FunctionName("OrderItemsReserver")]
-        public static async Task<IActionResult> Run(
-            [HttpTrigger(AuthorizationLevel.Function, "get", "post", Route = null)] HttpRequest req,
-            ILogger log)
+        [FunctionName("OrderItemReserver")]
+        public void Run([ServiceBusTrigger("default", Connection = "connection")] string myQueueItem, ILogger log)
         {
-            log.LogInformation("C# HTTP trigger function processed a request.");
+            log.LogInformation($"C# ServiceBus queue trigger function processed message: {myQueueItem}");
 
-            StreamReader sr = new StreamReader(req.Body);
-            string requestBody = await sr.ReadToEndAsync();
-            if (requestBody?.Length <= 0)
-            {
-                throw new Exception("No Data!");
-            }
-
-            Order order = JsonConvert.DeserializeObject<Order>(requestBody);
+            Order order = JsonConvert.DeserializeObject<Order>(myQueueItem);
 
             //
             // saves to blob storage
             //
 
-            var blobConnectionString = Environment.GetEnvironmentVariable("bs");
+            var blobConnectionString = Environment.GetEnvironmentVariable("blob-connection");
             var fileContainerName = "container1";
             string blobName = Guid.NewGuid().ToString(); // generated a new guid for each order
 
             BlobServiceClient blobServiceClient = new BlobServiceClient(blobConnectionString);
             BlobContainerClient containerClient = blobServiceClient.GetBlobContainerClient(fileContainerName);
             BlobClient blobClient = containerClient.GetBlobClient(blobName);
-            await blobClient.UploadAsync(ToStream(requestBody));
+            blobClient.Upload(ExtClass.ToStream(myQueueItem));
 
-
-            string responseMessage = "This HTTP triggered function executed successfully!";
-
-            return new OkObjectResult(responseMessage);
+            //throw new Exception("test exception");
         }
     }
+
 }
+

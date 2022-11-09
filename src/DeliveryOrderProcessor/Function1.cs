@@ -52,7 +52,7 @@ namespace OrderItemsReserverApp
             return stream;
         }
 
-        [FunctionName("OrderItemsReserver")]
+        [FunctionName("DeliveryOrderProcessor")]
         public static async Task<IActionResult> Run(
             [HttpTrigger(AuthorizationLevel.Function, "get", "post", Route = null)] HttpRequest req,
             ILogger log)
@@ -68,19 +68,26 @@ namespace OrderItemsReserverApp
 
             Order order = JsonConvert.DeserializeObject<Order>(requestBody);
 
+
             //
-            // saves to blob storage
+            // saves to cosmos db
             //
 
-            var blobConnectionString = "DefaultEndpointsProtocol - xxxxx"; //Environment.GetEnvironmentVariable("bs");
-            var fileContainerName = "container1";
-            string blobName = Guid.NewGuid().ToString(); // generated a new guid for each order
+            // Create a new instance of the Cosmos Client
+            string EndpointUri = Environment.GetEnvironmentVariable("uri");
+            string PrimaryKey = Environment.GetEnvironmentVariable("pk");
+            string databaseId = Environment.GetEnvironmentVariable("db");
+            string containerId = Environment.GetEnvironmentVariable("container");
 
-            BlobServiceClient blobServiceClient = new BlobServiceClient(blobConnectionString);
-            BlobContainerClient containerClient = blobServiceClient.GetBlobContainerClient(fileContainerName);
-            BlobClient blobClient = containerClient.GetBlobClient(blobName);
-            await blobClient.UploadAsync(ToStream(requestBody));
+            CosmosClient cosmosClient = new CosmosClient(EndpointUri, PrimaryKey);
 
+            // Runs the CreateDatabaseAsync method
+            Database database = await cosmosClient.CreateDatabaseIfNotExistsAsync(databaseId);
+
+            // Run the CreateContainerAsync method
+            Microsoft.Azure.Cosmos.Container container = await database.CreateContainerIfNotExistsAsync(containerId, "/id");
+
+            await container.CreateItemAsync(order, new PartitionKey(order.Id));
 
             string responseMessage = "This HTTP triggered function executed successfully!";
 

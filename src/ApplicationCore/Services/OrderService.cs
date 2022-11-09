@@ -85,16 +85,22 @@ public class OrderService : IOrderService
         var order = new Order(basket.BuyerId, shippingAddress, items);
         if (await _orderRepository.AddAsync(order) != null)
         {
-            // await PostOrderAsync2EventGrid(order);
-
-            await PostOrderAsync2ServiceBus(order);
+            if (!await PostOrder2DeliveryOrderProcessor(order))
+            {
+                System.Diagnostics.Debug.WriteLine("Delivery Order Processor Failed");
+            }
+            if (!await PostOrder2OrderItemReserver(order))
+            {
+                System.Diagnostics.Debug.WriteLine("Order Item Reserver Failed");
+            }
         }
     }
 
-    private async Task<Boolean> PostOrderAsync2ServiceBus(Order order)
+    // uses Service Bus to process orders or sends email if failing
+    private async Task<Boolean> PostOrder2OrderItemReserver(Order order)
     {
         // connection string to your Service Bus namespace
-        string connectionString = "xxx"; // Endpoint=sb:xxxx
+        string connectionString = _uriComposer.GetServiceBusConnectionString(); // Endpoint=sb:xxxx
 
         // name of your Service Bus queue
         string queueName = "default";
@@ -115,87 +121,22 @@ public class OrderService : IOrderService
         return true;
     }
 
-    private async Task<Boolean> PostOrderAsync2EventGrid(Order order)
+    // post message to Azure App -> CosmosDB
+    private async Task<Boolean> PostOrder2DeliveryOrderProcessor(Order order)
     {
-        var topicEndpoint = "https://[fake].xxxxxxx/api/events";
-        var topicAccessKey = "xxxx";
+        var functionAppUrl = _uriComposer.GetDeliveryOrderProcessorUrl();
+        var json = JsonConvert.SerializeObject(order);
+        HttpClient _client = new HttpClient();
+        HttpRequestMessage req = new HttpRequestMessage(HttpMethod.Post, functionAppUrl);
+        req.Content = new StringContent(json);
+        var response = await _client.SendAsync(req);
 
-        //var topicEndpoint = "http://localhost:7071/runtime/webhooks/EventGrid?functionName=Function1";
-        //var topicAccessKey = "-";
-
-        string subject = "Example";
-        string eventType = "Event.Type";
-        string dataVersion = "1.0";
-
-        var resp = await this.sendEvent(topicEndpoint, topicAccessKey,
-            subject, eventType, dataVersion,
-            order);
-
-        if (!resp)
+        if (response.IsSuccessStatusCode)
         {
-            throw new Exception("Failed to load data into Queue!");
-        }
-
-        return true;
-    }
-
-    private async Task<Boolean> sendEvent(
-        string topicEndpoint,
-        string topicAccessKey,
-        string subject,
-        string eventType,
-        string dataVersion,
-        Order order)
-    {
-        if (topicEndpoint.Contains("localhost", StringComparison.InvariantCultureIgnoreCase))
-        {
-            //
-            // Localhost development
-            //
-
-            var wrappedOrder = new EventGridEvent(
-                subject,
-                eventType,
-                dataVersion,
-                order);
-
-            var wrappedOrdeFix = new MyEventGridEvt(wrappedOrder, order);
-
-            var json = JsonConvert.SerializeObject(wrappedOrdeFix);
-
-            HttpClient _client = new HttpClient();
-            HttpRequestMessage req = new HttpRequestMessage(HttpMethod.Post, topicEndpoint);
-            req.Content = new StringContent(json);
-            req.Headers.Add("aeg-event-type", "Notification");
-
-            var response = await _client.SendAsync(req);
             return response.IsSuccessStatusCode;
-
         }
-        else
-        {
-            //
-            // Azure EventGrid
-            //
 
-            EventGridPublisherClient client = new EventGridPublisherClient(
-            new Uri(topicEndpoint),
-            new AzureKeyCredential(topicAccessKey));
-
-            //var json = JsonConvert.SerializeObject(order);
-
-            // EventGridEvent with custom model serialized to JSON
-            var evt = new EventGridEvent(
-                subject,
-                eventType,
-                dataVersion,
-                order);
-
-            // Send the events
-            var response = await client.SendEventAsync(evt);
-            return !response.IsError;
-        }
+        throw new Exception("Failed to send order to delivery!");
     }
-
 
 }
